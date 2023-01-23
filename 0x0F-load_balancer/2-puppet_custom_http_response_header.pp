@@ -1,25 +1,30 @@
-# Installs a Nginx server with custom HTTP header
+# Setup New Ubuntu server with nginx
+# and add a custom HTTP header
 
-exec {'update':
-  provider => shell,
-  command  => 'sudo apt-get -y update',
-  before   => Exec['install Nginx'],
+exec { 'update system':
+        command => '/usr/bin/apt-get update',
 }
 
-exec {'install Nginx':
-  provider => shell,
-  command  => 'sudo apt-get -y install nginx',
-  before   => Exec['add_header'],
+package { 'nginx':
+ensure => 'installed',
+require => Exec['update system']
 }
 
-exec { 'add_header':
-  provider    => shell,
-  environment => ["HOST="],
-  command     => 'sudo sed -i "s/include \/etc\/nginx\/sites-enabled\/\*;/include \/etc\/nginx\/sites-enabled\/\*;\n\tadd_header X-Served-By \"\";/" /etc/nginx/nginx.conf',
-  before      => Exec['restart Nginx'],
+file {'/var/www/html/index.html':
+content => 'Hello World!'
 }
 
-exec { 'restart Nginx':
-  provider => shell,
-  command  => 'sudo service nginx restart',
+exec {'redirect_me':
+command => 'sed -i "24i\rewrite ^/redirect_me https://th3-gr00t.tk/ permanent;" /etc/nginx/sites-available/default',
+provider => 'shell'
+}
+
+exec {'HTTP header':
+command => 'sed -i "25i\add_header X-Served-By $hostname;" /etc/nginx/sites-available/default',
+provider => 'shell'
+}
+
+service {'nginx':
+ensure => running,
+require => Package['nginx']
 }

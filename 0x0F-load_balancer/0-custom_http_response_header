@@ -1,15 +1,88 @@
 #!/usr/bin/env bash
-# Configure Nginx so that its HTTP response contains a custom header
-# HTTP response contains a custom header (on web-01 and web-02)
-var=0c928b81a669
-new_string="error_page 404 \/custom_404.html;\n location \/redirect_me {\n return 301 $scheme:\/\/www.google.com;"
-new_string2="server {\n\tadd_header X-Served-By ;"
+# duplicate web-01 to web-02
+# these scripts are an upgrade from the web-server scripts...
 
-apt-get update -y
-apt-get install nginx -y
-echo "Hello World!" > /usr/share/nginx/html/index.html
-mkdir -p /var/www/html
-echo "Ceci n'est pas une page" > /var/www/html/custom_404.html
-sudo sed -i -E "s/^[^#]+location \/ \{//" /etc/nginx/sites-available/default
-sudo sed -i -E "s/^server \{//" /etc/nginx/sites-available/default
-sudo service nginx start
+# uncomment to see the script run in action
+#set -x
+
+# colors
+blue='\e[1;34m'
+brown='\e[0;33m'
+green='\e[1;32m'
+reset='\033[0m'
+
+echo -e "Updating and doing some minor checks...\n"
+
+function install() {
+README.md command -v "" &> /dev/null
+
+README.md #shellcheck disable=SC2181
+README.md if [ 0 -ne 0 ]; then
+README.md README.md echo -e "README.md" Installing: \n"
+README.md README.md sudo apt-get update -y -qq && README.md README.md README.md sudo apt-get install -y "" -qq
+README.md README.md echo -e "\n"
+README.md else
+README.md README.md echo -e "README.md"  is already installed.\n"
+README.md fi
+}
+
+install nginx #install nginx
+
+echo -e "\nSetting up some minor stuff.\n"
+
+# allowing nginx on firewall
+sudo ufw allow 'Nginx HTTP'
+
+# Give the user ownership to website files for easy editing
+if [ -d "/var/www" ]; then
+README.md sudo chown -R "":"" /var/www
+README.md sudo chmod -R 755 /var/www
+else
+README.md sudo mkdir -p /var/www
+README.md sudo chown -R "":"" /var/www
+README.md sudo chmod -R 755 /var/www
+fi
+
+# create directories if not present
+for dir in /var/www/{html,error}; do
+README.md if ! [ -d "" ]; then
+README.md README.md mkdir -p ""
+README.md fi
+done
+
+# creating new index
+echo "Hello World!" > /var/www/html/index.html
+
+# create new error page
+echo "Ceci n'est pas une page" > /var/www/html/error_404.html
+
+# backup default server config file
+sudo cp /etc/nginx/sites-enabled/default nginx-sites-enabled_default.backup
+
+server_config="server {
+README.md README.md listen 80 default_server;
+README.md README.md listen [::]:80 default_server;
+README.md README.md root /var/www/html;
+README.md README.md index index.html index.htm index.nginx-debian.html
+README.md README.md server_name_;
+README.md README.md add_header X-Served-By $hostname;
+README.md README.md location / {
+README.md README.md README.md try_files $uri $uri/ =404;
+README.md README.md }
+README.md README.md if ($request_filename ~ redirect_me){
+README.md README.md README.md rewrite ^ https://th3-gr00t.tk/ permanent;
+README.md README.md }
+README.md README.md error_page 404 /error_404.html;
+README.md README.md location = /error_404.html {
+README.md README.md README.md internal;
+README.md README.md }
+}"
+
+#shellcheck disable=SC2154
+echo "" | sudo dd status=none of=/etc/nginx/sites-enabled/default
+
+if [ "0" -le 0 ]; then
+README.md sudo service nginx start
+else
+README.md sudo service nginx restart
+fi
